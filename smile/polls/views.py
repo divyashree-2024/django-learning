@@ -1,5 +1,5 @@
 from django.db.models import F
-from django.http import HttpResponse, HttpResponseRedirect, Http404
+from django.http import HttpResponse, HttpResponseRedirect, Http404, JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.views import generic
@@ -49,9 +49,15 @@ def vote(request, question_id):
         return HttpResponseRedirect(reverse("polls:results", args=(question.id,)))
 
 def index(request):
-    latest_question_list = Question.objects.order_by("-pub_date")[:5]
-    context = {"latest_question_list": latest_question_list}
-    return render(request, "index.html", context)
+    latest_question_list = list(Question.objects.order_by("-pub_date"))
+    response_obj = []
+    req_uri = request.build_absolute_uri()
+    for question in latest_question_list:
+        text = question.question_text
+        link = f"{req_uri}{question.id}/"
+        response_obj.append({"text": text, "link": link})
+    return JsonResponse(response_obj, safe=False)
+    # return render(request, "index.html", context)
 
 def detail(request, question_id):
     question = get_object_or_404(Question, pk=question_id)
